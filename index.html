@@ -36,20 +36,19 @@
   .status { margin-top: .75rem; padding: 10px 14px; border-radius: 8px; font-size: 13px; display: none; }
   .status.ok { display: block; background: #eaf3de; color: #3b6d11; border: 1px solid #c0dd97; }
   .status.err { display: block; background: #fcebeb; color: #a32d2d; border: 1px solid #f7c1c1; }
-  .divider { height: 1px; background: #f0f0f0; margin: .875rem 0; }
 </style>
 </head>
 <body>
 <div class="app">
   <h1>บันทึกข้อมูลมิเตอร์สาขา</h1>
-  <p class="subtitle">กรอกข้อมูลสาขาและระบุคู่ค้าที่ใช้แต่ละมิเตอร์</p>
+  <p class="subtitle">ลงทะเบียนสาขาและระบุคู่ค้าที่ใช้แต่ละมิเตอร์</p>
 
   <div class="card">
     <div class="section-label">ผู้กรอกข้อมูล</div>
     <div class="field-row">
       <div class="field">
         <label>รหัสพนักงาน</label>
-        <input type="text" id="empId" placeholder="เช่น EMP001" />
+        <input type="text" id="empId" placeholder="เช่น 1234567" />
       </div>
       <div class="field">
         <label>ชื่อพนักงาน</label>
@@ -62,11 +61,11 @@
     <div class="section-label">ข้อมูลสาขา</div>
     <div class="field">
       <label>รหัสสาขา</label>
-      <input type="text" id="branchId" placeholder="เช่น B001" />
+      <input type="text" id="branchId" placeholder="เช่น 13440" />
     </div>
     <div class="field">
       <label>ชื่อสาขา</label>
-      <input type="text" id="branchName" placeholder="เช่น สาขารัชดา" />
+      <input type="text" id="branchName" placeholder="เช่น พัฒนาการ 38 (กลางซอย)" />
     </div>
   </div>
 
@@ -147,10 +146,10 @@ function submitData() {
   btn.textContent = "กำลังบันทึก...";
 
   var payload = {
-    empId: empId,
-    empName: empName,
     branchId: branchId,
     branchName: branchName,
+    empId: empId,
+    empName: empName,
     meters: meters.map(function(m, i) {
       return { meterCode: "E" + (i + 1), shopName: m.shop.trim() };
     })
@@ -166,29 +165,28 @@ function submitData() {
     if (s) s.remove();
     btn.disabled = false;
     btn.textContent = "บันทึกลง Google Sheets";
-
     if (result && result.status === "success") {
-      showStatus("✓ บันทึกสำเร็จ! เพิ่ม " + payload.meters.length + " มิเตอร์ลง Google Sheets แล้ว", "ok");
+      showStatus("บันทึกสำเร็จ! เพิ่ม " + payload.meters.length + " มิเตอร์ลง Google Sheets แล้ว", "ok");
       document.getElementById("branchId").value = "";
       document.getElementById("branchName").value = "";
-      meters = [];
-      seq = 0;
-      renderMeters();
+      meters = []; seq = 0; renderMeters();
     } else {
       showStatus("เกิดข้อผิดพลาด: " + (result ? result.message : "ไม่ทราบสาเหตุ"), "err");
     }
   };
 
+  setTimeout(function() {
+    if (window[cbName]) {
+      delete window[cbName];
+      btn.disabled = false;
+      btn.textContent = "บันทึกลง Google Sheets";
+      showStatus("หมดเวลาเชื่อมต่อ กรุณาลองใหม่", "err");
+    }
+  }, 8000);
+
   var script = document.createElement("script");
   script.id = "s_" + cbName;
   script.src = url;
-  script.onerror = function() {
-    delete window[cbName];
-    script.remove();
-    btn.disabled = false;
-    btn.textContent = "บันทึกลง Google Sheets";
-    showStatus("เชื่อมต่อไม่ได้ กรุณาตรวจสอบการ deploy Apps Script", "err");
-  };
   document.head.appendChild(script);
 }
 
