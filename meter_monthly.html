@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>บันทึกเลขมิเตอร์รายเดือน</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Sarabun', Arial, sans-serif; background: #f5f5f5; min-height: 100vh; padding: 2rem 1rem; }
+  .app { max-width: 560px; margin: 0 auto; }
+  h1 { font-size: 20px; font-weight: 600; color: #1a1a2e; margin-bottom: 4px; }
+  .subtitle { font-size: 13px; color: #666; margin-bottom: 1.5rem; }
+  .card { background: #fff; border-radius: 12px; border: 1px solid #e8e8e8; padding: 1.25rem; margin-bottom: 1rem; }
+  .section-label { font-size: 11px; font-weight: 600; letter-spacing: .07em; color: #999; text-transform: uppercase; margin-bottom: .75rem; }
+  .field { margin-bottom: .875rem; }
+  .field:last-child { margin-bottom: 0; }
+  .field label { display: block; font-size: 13px; color: #555; margin-bottom: 5px; }
+  .field input, .field select { width: 100%; padding: 9px 11px; font-size: 14px; border: 1px solid #ddd; border-radius: 8px; background: #fff; color: #1a1a2e; outline: none; transition: border-color .15s; font-family: inherit; }
+  .field input:focus, .field select:focus { border-color: #378ADD; box-shadow: 0 0 0 3px rgba(55,138,221,.1); }
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .btn-lookup { width: 100%; padding: 10px; background: #185FA5; color: #fff; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; transition: opacity .15s; margin-top: 4px; }
+  .btn-lookup:hover { opacity: .85; }
+  .btn-lookup:disabled { opacity: .35; cursor: not-allowed; }
+  .meter-section { display: none; }
+  .meter-row { display: grid; grid-template-columns: 64px 1fr 110px; gap: 10px; align-items: center; margin-bottom: 10px; animation: fi .2s ease; }
+  @keyframes fi { from { opacity: 0; transform: translateY(-3px); } to { opacity: 1; transform: translateY(0); } }
+  .mbadge { background: #E6F1FB; color: #185FA5; font-size: 13px; font-weight: 600; padding: 8px 6px; border-radius: 8px; text-align: center; line-height: 1.2; }
+  .mbadge small { display: block; font-size: 10px; font-weight: 400; opacity: .7; margin-bottom: 1px; }
+  .shop-name { font-size: 13px; color: #444; line-height: 1.3; }
+  .shop-name small { display: block; font-size: 11px; color: #aaa; margin-top: 1px; }
+  .reading-input { padding: 9px 11px; font-size: 14px; border: 1px solid #ddd; border-radius: 8px; background: #fff; color: #1a1a2e; outline: none; width: 100%; transition: border-color .15s; font-family: inherit; text-align: right; }
+  .reading-input:focus { border-color: #378ADD; box-shadow: 0 0 0 3px rgba(55,138,221,.1); }
+  .btn-submit { width: 100%; padding: 11px; background: #1a1a2e; color: #fff; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: opacity .15s; font-family: inherit; }
+  .btn-submit:hover { opacity: .85; }
+  .btn-submit:disabled { opacity: .35; cursor: not-allowed; }
+  .status { margin-top: .75rem; padding: 10px 14px; border-radius: 8px; font-size: 13px; display: none; }
+  .status.ok { display: block; background: #eaf3de; color: #3b6d11; border: 1px solid #c0dd97; }
+  .status.err { display: block; background: #fcebeb; color: #a32d2d; border: 1px solid #f7c1c1; }
+  .status.info { display: block; background: #e6f1fb; color: #185FA5; border: 1px solid #b3d4f5; }
+  .branch-info { background: #f8f9fa; border-radius: 8px; padding: 10px 12px; margin-bottom: 1rem; font-size: 13px; color: #444; border: 1px solid #e8e8e8; }
+  .branch-info strong { color: #1a1a2e; }
+</style>
+</head>
+<body>
+<div class="app">
+  <h1>บันทึกเลขมิเตอร์รายเดือน</h1>
+  <p class="subtitle">กรอกรหัสสาขาเพื่อดึงข้อมูลมิเตอร์ แล้วบันทึกเลขหน้าปัด</p>
+
+  <div class="card">
+    <div class="section-label">ผู้กรอกข้อมูล</div>
+    <div class="field-row">
+      <div class="field">
+        <label>รหัสพนักงาน</label>
+        <input type="text" id="empId" placeholder="เช่น 1234567" />
+      </div>
+      <div class="field">
+        <label>ชื่อพนักงาน</label>
+        <input type="text" id="empName" placeholder="เช่น สมชาย ใจดี" />
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="section-label">ข้อมูลสาขา</div>
+    <div class="field-row">
+      <div class="field">
+        <label>วันที่บันทึก</label>
+        <input type="date" id="month" />
+      </div>
+      <div class="field">
+        <label>รหัสสาขา</label>
+        <input type="text" id="branchId" placeholder="เช่น 13440" />
+      </div>
+    </div>
+    <button class="btn-lookup" id="lookupBtn" onclick="lookupBranch()">ค้นหาสาขา →</button>
+  </div>
+
+  <div class="meter-section" id="meterSection">
+    <div class="branch-info" id="branchInfo"></div>
+    <div class="card">
+      <div class="section-label">เลขหน้าปัดมิเตอร์ (หน่วยสะสม)</div>
+      <div id="meterList"></div>
+    </div>
+    <button class="btn-submit" id="submitBtn" onclick="submitData()">บันทึกลง Google Sheets</button>
+    <div class="status" id="statusMsg"></div>
+  </div>
+</div>
+
+<script>
+var SCRIPT_URL = "https://script.google.com/macros/s/AKfycby2fBxF9dQeucQu4BxOZeJNZp2waYqYYhgoFRie4C9l7tU_9-FVkziQlaUby90OILwFiA/exec";
+var masterMeters = [];
+var branchName = "";
+
+// ตั้งเดือนปัจจุบันอัตโนมัติ
+(function() {
+  var now = new Date();
+  var y = now.getFullYear();
+  var m = ("0" + (now.getMonth() + 1)).slice(-2);
+  var d = ("0" + now.getDate()).slice(-2);
+  document.getElementById("month").value = y + "-" + m + "-" + d;
+})();
+
+function showStatus(msg, type) {
+  var el = document.getElementById("statusMsg");
+  el.textContent = msg;
+  el.className = "status " + type;
+}
+
+function lookupBranch() {
+  var branchId = document.getElementById("branchId").value.trim();
+  var empId = document.getElementById("empId").value.trim();
+  var empName = document.getElementById("empName").value.trim();
+  var month = document.getElementById("month").value;
+
+  if (!empId) { alert("กรุณากรอกรหัสพนักงาน"); return; }
+  if (!empName) { alert("กรุณากรอกชื่อพนักงาน"); return; }
+  if (!month) { alert("กรุณาเลือกวันที่"); return; }
+  if (!branchId) { alert("กรุณากรอกรหัสสาขา"); return; }
+
+  var btn = document.getElementById("lookupBtn");
+  btn.disabled = true;
+  btn.textContent = "กำลังค้นหา...";
+  document.getElementById("meterSection").style.display = "none";
+
+  var cbName = "cb_" + Date.now();
+  var url = SCRIPT_URL + "?action=getMeters&branchId=" + encodeURIComponent(branchId) + "&callback=" + cbName;
+
+  window[cbName] = function(result) {
+    delete window[cbName];
+    var s = document.getElementById("s_" + cbName);
+    if (s) s.remove();
+    btn.disabled = false;
+    btn.textContent = "ค้นหาสาขา →";
+
+    if (result && result.status === "success") {
+      if (result.meters.length === 0) {
+        alert("ไม่พบข้อมูลสาขา " + branchId + " กรุณาตรวจสอบรหัสสาขา");
+        return;
+      }
+      masterMeters = result.meters;
+      branchName = result.meters[0] ? result.meters[0].branchName || "" : "";
+      renderMeterForm(branchId, result.meters);
+    } else {
+      alert("เกิดข้อผิดพลาด: " + (result ? result.message : "ไม่ทราบสาเหตุ"));
+    }
+  };
+
+  setTimeout(function() {
+    if (window[cbName]) {
+      delete window[cbName];
+      btn.disabled = false;
+      btn.textContent = "ค้นหาสาขา →";
+      alert("หมดเวลาเชื่อมต่อ กรุณาลองใหม่");
+    }
+  }, 8000);
+
+  var script = document.createElement("script");
+  script.id = "s_" + cbName;
+  script.src = url;
+  document.head.appendChild(script);
+}
+
+function renderMeterForm(branchId, meters) {
+  document.getElementById("branchInfo").innerHTML =
+    "<strong>สาขา " + branchId + "</strong> · พบ " + meters.length + " มิเตอร์";
+
+  var html = "";
+  for (var i = 0; i < meters.length; i++) {
+    html += '<div class="meter-row">' +
+      '<div class="mbadge"><small>มิเตอร์</small>' + meters[i].meterCode + '</div>' +
+      '<div class="shop-name">' + meters[i].shopName + '</div>' +
+      '<input class="reading-input" id="r' + i + '" type="number" placeholder="เลขมิเตอร์" min="0" />' +
+      '</div>';
+  }
+  document.getElementById("meterList").innerHTML = html;
+  document.getElementById("meterSection").style.display = "block";
+  document.getElementById("statusMsg").className = "status";
+
+  // focus ช่องแรก
+  setTimeout(function() {
+    var el = document.getElementById("r0");
+    if (el) el.focus();
+  }, 100);
+}
+
+function submitData() {
+  var branchId = document.getElementById("branchId").value.trim();
+  var month = document.getElementById("month").value;
+  var empId = document.getElementById("empId").value.trim();
+  var empName = document.getElementById("empName").value.trim();
+
+  // เก็บเลขมิเตอร์
+  var metersData = [];
+  for (var i = 0; i < masterMeters.length; i++) {
+    var val = document.getElementById("r" + i).value.trim();
+    if (val === "") {
+      showStatus("กรุณากรอกเลขมิเตอร์ให้ครบทุกมิเตอร์", "err");
+      return;
+    }
+    metersData.push({
+      meterCode: masterMeters[i].meterCode,
+      shopName: masterMeters[i].shopName,
+      reading: parseFloat(val)
+    });
+  }
+
+  var btn = document.getElementById("submitBtn");
+  btn.disabled = true;
+  btn.textContent = "กำลังบันทึก...";
+
+  var payload = {
+    month: month,
+    branchId: branchId,
+    branchName: branchName,
+    empId: empId,
+    empName: empName,
+    meters: metersData
+  };
+
+  var cbName = "cb_" + Date.now();
+  var encoded = encodeURIComponent(JSON.stringify(payload));
+  var url = SCRIPT_URL + "?action=saveReading&callback=" + cbName + "&data=" + encoded;
+
+  window[cbName] = function(result) {
+    delete window[cbName];
+    var s = document.getElementById("s_" + cbName);
+    if (s) s.remove();
+    btn.disabled = false;
+    btn.textContent = "บันทึกลง Google Sheets";
+
+    if (result && result.status === "success") {
+      showStatus("บันทึกสำเร็จ! " + metersData.length + " มิเตอร์ วันที่ " + month, "ok");
+      // เคลียร์เลขมิเตอร์
+      for (var i = 0; i < masterMeters.length; i++) {
+        var el = document.getElementById("r" + i);
+        if (el) el.value = "";
+      }
+    } else {
+      showStatus("เกิดข้อผิดพลาด: " + (result ? result.message : "ไม่ทราบสาเหตุ"), "err");
+    }
+  };
+
+  setTimeout(function() {
+    if (window[cbName]) {
+      delete window[cbName];
+      btn.disabled = false;
+      btn.textContent = "บันทึกลง Google Sheets";
+      showStatus("หมดเวลาเชื่อมต่อ กรุณาลองใหม่", "err");
+    }
+  }, 8000);
+
+  var script = document.createElement("script");
+  script.id = "s_" + cbName;
+  script.src = url;
+  document.head.appendChild(script);
+}
+</script>
+</body>
+</html>
