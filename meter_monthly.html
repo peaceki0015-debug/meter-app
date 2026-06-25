@@ -84,6 +84,12 @@
       <div class="section-label">เลขหน้าปัดมิเตอร์ (หน่วยสะสม)</div>
       <div id="meterList"></div>
     </div>
+    <div class="card">
+      <div class="section-label">หมายเหตุ</div>
+      <div class="field">
+        <textarea id="remark" rows="3" placeholder="ระบุหมายเหตุเพิ่มเติม (ถ้ามี)" style="width:100%;padding:9px 11px;font-size:14px;border:1px solid #ddd;border-radius:8px;font-family:inherit;resize:vertical;outline:none;"></textarea>
+      </div>
+    </div>
     <button class="btn-submit" id="submitBtn" onclick="submitData()">บันทึกลง Google Sheets</button>
     <div class="status" id="statusMsg"></div>
   </div>
@@ -211,12 +217,14 @@ function submitData() {
   btn.disabled = true;
   btn.textContent = "กำลังบันทึก...";
 
+  var remark = document.getElementById('remark').value.trim();
   var payload = {
     month: date,
     branchId: branchId,
     branchName: currentBranchName,
     empId: empId,
     empName: empName,
+    remark: remark,
     meters: metersData
   };
 
