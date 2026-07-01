@@ -39,6 +39,11 @@
   .status { margin-top: .75rem; padding: 10px 14px; border-radius: 8px; font-size: 13px; display: none; }
   .status.ok { display: block; background: #eaf3de; color: #3b6d11; border: 1px solid #c0dd97; }
   .status.err { display: block; background: #fcebeb; color: #a32d2d; border: 1px solid #f7c1c1; }
+.wbadge { background: #E6F5FB; color: #0B6E8C; font-size: 13px; font-weight: 600; padding: 8px 6px; border-radius: 8px; text-align: center; line-height: 1.2; }
+.wbadge small { display: block; font-size: 10px; font-weight: 400; opacity: .7; margin-bottom: 1px; }
+.meter-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.col-header { font-size: 11px; font-weight: 700; letter-spacing: .05em; color: #888; text-transform: uppercase; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 2px solid #e8e8e8; }
+.reading-row { display: grid; grid-template-columns: 64px 1fr 110px; gap: 8px; align-items: center; margin-bottom: 10px; }
 </style>
 </head>
 <body>
@@ -81,8 +86,17 @@
 
   <div class="meter-section" id="meterSection">
     <div class="card">
-      <div class="section-label">เลขหน้าปัดมิเตอร์ (หน่วยสะสม)</div>
-      <div id="meterList"></div>
+      <div class="section-label" style="margin-bottom:12px">เลขหน้าปัดมิเตอร์ (หน่วยสะสม)</div>
+      <div class="meter-cols">
+        <div>
+          <div class="col-header">⚡ ไฟฟ้า (E)</div>
+          <div id="elecList"></div>
+        </div>
+        <div>
+          <div class="col-header">💧 น้ำ (W)</div>
+          <div id="waterList"></div>
+        </div>
+      </div>
     </div>
     <div class="card">
       <div class="section-label">หมายเหตุ</div>
@@ -97,7 +111,8 @@
 
 <script>
 var SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzh9fTxEcGpG9oCXYqx7Ysu9RuHRdxTsCUrD_9BgZ9h0rDZNsM1iHjlup1aAZBsOJGTkg/exec";
-var masterMeters = [];
+var elecMeters = [];
+var waterMeters = [];
 var currentBranchName = "";
 
 (function() {
@@ -175,20 +190,29 @@ function lookupBranch() {
   document.head.appendChild(script);
 }
 
-function renderMeterForm(meters) {
-  var html = "";
-  for (var i = 0; i < meters.length; i++) {
-    html += '<div class="meter-row">' +
-      '<div class="mbadge"><small>มิเตอร์</small>' + meters[i].meterCode + '</div>' +
-      '<div class="shop-name">' + meters[i].shopName + '</div>' +
-      '<input class="reading-input" id="r' + i + '" type="number" placeholder="เลขมิเตอร์" min="0" />' +
+function renderMeterForm() {
+  var elecHtml = "";
+  for (var i = 0; i < elecMeters.length; i++) {
+    elecHtml += '<div class="reading-row">' +
+      '<div class="mbadge"><small>มิเตอร์</small>' + elecMeters[i].meterCode + '</div>' +
+      '<div class="shop-name" style="font-size:12px">' + elecMeters[i].shopName + '</div>' +
+      '<input class="reading-input" id="re' + i + '" type="number" placeholder="เลขมิเตอร์" min="0" />' +
       '</div>';
   }
-  document.getElementById("meterList").innerHTML = html;
+  var waterHtml = "";
+  for (var j = 0; j < waterMeters.length; j++) {
+    waterHtml += '<div class="reading-row">' +
+      '<div class="wbadge"><small>มิเตอร์</small>' + waterMeters[j].meterCode + '</div>' +
+      '<div class="shop-name" style="font-size:12px">' + waterMeters[j].shopName + '</div>' +
+      '<input class="reading-input" id="rw' + j + '" type="number" placeholder="เลขมิเตอร์" min="0" style="border-color:#9BDBEC" />' +
+      '</div>';
+  }
+  document.getElementById("elecList").innerHTML = elecHtml || '<div style="font-size:12px;color:#aaa;padding:8px">ไม่มีมิเตอร์ไฟฟ้า</div>';
+  document.getElementById("waterList").innerHTML = waterHtml || '<div style="font-size:12px;color:#aaa;padding:8px">ไม่มีมิเตอร์น้ำ</div>';
   document.getElementById("meterSection").style.display = "block";
   document.getElementById("statusMsg").className = "status";
   setTimeout(function() {
-    var el = document.getElementById("r0");
+    var el = document.getElementById("re0");
     if (el) el.focus();
   }, 100);
 }
@@ -200,17 +224,15 @@ function submitData() {
   var empName = document.getElementById("empName").value.trim();
 
   var metersData = [];
-  for (var i = 0; i < masterMeters.length; i++) {
-    var val = document.getElementById("r" + i).value.trim();
-    if (val === "") {
-      showStatus("กรุณากรอกเลขมิเตอร์ให้ครบทุกมิเตอร์", "err");
-      return;
-    }
-    metersData.push({
-      meterCode: masterMeters[i].meterCode,
-      shopName: masterMeters[i].shopName,
-      reading: parseFloat(val)
-    });
+  for (var i = 0; i < elecMeters.length; i++) {
+    var val = document.getElementById("re" + i).value.trim();
+    if (val === "") { showStatus("กรุณากรอกเลขมิเตอร์ไฟฟ้าให้ครบ", "err"); return; }
+    metersData.push({ meterCode: elecMeters[i].meterCode, shopName: elecMeters[i].shopName, reading: parseFloat(val) });
+  }
+  for (var j = 0; j < waterMeters.length; j++) {
+    var valw = document.getElementById("rw" + j).value.trim();
+    if (valw === "") { showStatus("กรุณากรอกเลขมิเตอร์น้ำให้ครบ", "err"); return; }
+    metersData.push({ meterCode: waterMeters[j].meterCode, shopName: waterMeters[j].shopName, reading: parseFloat(valw) });
   }
 
   var btn = document.getElementById("submitBtn");
@@ -241,9 +263,13 @@ function submitData() {
 
     if (result && result.status === "success") {
       showStatus("บันทึกสำเร็จ! " + metersData.length + " มิเตอร์ วันที่ " + date, "ok");
-      for (var i = 0; i < masterMeters.length; i++) {
-        var el = document.getElementById("r" + i);
+      for (var i = 0; i < elecMeters.length; i++) {
+        var el = document.getElementById("re" + i);
         if (el) el.value = "";
+      }
+      for (var j = 0; j < waterMeters.length; j++) {
+        var elw = document.getElementById("rw" + j);
+        if (elw) elw.value = "";
       }
     } else {
       showStatus("เกิดข้อผิดพลาด: " + (result ? result.message : "ไม่ทราบสาเหตุ"), "err");
